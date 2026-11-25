@@ -1,6 +1,4 @@
-# HUMP starter file
-
-from wumppkt import *		# I recommend the "from ... import" form
+from wumppkt import *
 from socket import *
 import sys
 import time
@@ -58,8 +56,9 @@ def main():
     
     # send ACK[0] to newport
     # What do you have to do to create and send ACK[0]? See below where ACK[n] is sent
-    ack = None
-    s.sendto(None, (dest, newport))
+    ack = ACK(0)
+    ackbody = ack.write()
+    s.sendto(ackbody, (dest, newport))
     
     ##########################################################
     # main loop: wait for each DATA[N] and send ACK[N] in response
@@ -89,9 +88,12 @@ def main():
        block = data.blocknum()
        print('received block', block, file=sys.stderr)
        
-       sys.stdout.buffer.write(data.databuf)
+       if expected_block == block:
+            sys.stdout.buffer.write(data.databuf)
        ack = ACK(expected_block)		# pld: something will need to be fixed here for later blocks
        s.sendto(ack.write(), (dest, newport))
+       if expected_block == block:
+                   expected_block += 1
        if len(data.databuf) < MAXDATASIZE: return
 
 #################################################################       
@@ -99,21 +101,14 @@ def main():
 # pktbuf is the entire packet body, including the HUMP header
 
 def printinfo(pktbuf, pktsrc):
-    proto = proto(pktbuf)
-    opcode = opcode(pktbuf)
+    pkt_proto = protocol(pktbuf)
+    pkt_opcode = opcode(pktbuf)
     length = len(pktbuf)
     print('received packet: length={}, proto={}, opcode={}, source=({},{}), time={}'.format(
-    	length, proto, opcode, pktsrc[0], pktsrc[1], time.time_ns() // 1000000), file=sys.stderr)
-    if opcode == DATAop:
+    	length, pkt_proto, pkt_opcode, pktsrc[0], pktsrc[1], time.time_ns() // 1000000), file=sys.stderr)
+    if pkt_opcode == DATAop:
         data = DATA.read(pktbuf)		# python static method from class DATA
         print('    DATA packet, block={}'.format(data.blocknum()), file=sys.stderr)
     
 
-
-
 main()
-           
-    
-    
-       
-   

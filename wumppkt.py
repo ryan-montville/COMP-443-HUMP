@@ -1,5 +1,3 @@
-# python version of wumppkt
-
 import struct
 
 
