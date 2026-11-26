@@ -6,7 +6,7 @@ import time
 def main():
     srcport = 0
     destport = SERVERPORT
-    filename = 'marspacket'
+    filename = 'vanilla'
     desthost = 'ulam.cs.luc.edu'
     winsize  = 1
     latchport = 0
@@ -55,7 +55,6 @@ def main():
     print('HANDOFF received; new port is', newport, file=sys.stderr)
     
     # send ACK[0] to newport
-    # What do you have to do to create and send ACK[0]? See below where ACK[n] is sent
     ack = ACK(0)
     ackbody = ack.write()
     s.sendto(ackbody, (dest, newport))
@@ -68,18 +67,22 @@ def main():
     
        try:
             (buf, src) = s.recvfrom(1024)
+            # Check to make sure the host and port match
             if src[0] != dest:
                 print(f"{src[0]} does not match dest: {dest}", file=sys.stderr)
                 continue
             if src[1] != newport:
                 print(f"{src[1]} does not match new port: {newport}", file=sys.stderr)
                 continue
-
        except TimeoutError:
            print('timeout', file=sys.stderr)
            return
        except:
            return
+
+        # Check the packet size
+       if len(buf) < DHEADERSIZE or len(buf) > DHEADERSIZE + MAXDATASIZE:
+            print(f"Wrong packet length: {len(buf)}", file=sys.stderr)
        
        # proto = protocol(buf)
        # OPcode = opcode(buf)
