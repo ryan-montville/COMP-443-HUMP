@@ -6,7 +6,7 @@ import time
 def main():
     srcport = 0
     destport = SERVERPORT
-    filename = 'vanilla'
+    filename = 'marspacket'
     desthost = 'ulam.cs.luc.edu'
     winsize  = 1
     latchport = 0
@@ -67,7 +67,14 @@ def main():
     while True:
     
        try:
-           (buf, src) = s.recvfrom(1024)
+            (buf, src) = s.recvfrom(1024)
+            if src[0] != dest:
+                print(f"{src[0]} does not match dest: {dest}", file=sys.stderr)
+                continue
+            if src[1] != newport:
+                print(f"{src[1]} does not match new port: {newport}", file=sys.stderr)
+                continue
+
        except TimeoutError:
            print('timeout', file=sys.stderr)
            return
