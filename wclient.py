@@ -64,9 +64,9 @@ def main():
     # all DATA[N] must come from newport
     
     while True:
-    
-       try:
+        try:
             (buf, src) = s.recvfrom(1024)
+            
             # Check to make sure the host and port match
             if src[0] != dest:
                 print(f"{src[0]} does not match dest: {dest}", file=sys.stderr)
@@ -74,37 +74,44 @@ def main():
             if src[1] != newport:
                 print(f"{src[1]} does not match new port: {newport}", file=sys.stderr)
                 continue
-       except TimeoutError:
+        except TimeoutError:
            print('timeout', file=sys.stderr)
            return
-       except:
+        except:
            return
 
+        # proto = protocol(buf)
+        # OPcode = opcode(buf)
+        srcport = src[1]
+
         # Check the packet size
-       if len(buf) < DHEADERSIZE or len(buf) > DHEADERSIZE + MAXDATASIZE:
+        if len(buf) < DHEADERSIZE or len(buf) > DHEADERSIZE + MAXDATASIZE:
             print(f"Wrong packet length: {len(buf)}", file=sys.stderr)
+            continue
        
-       # proto = protocol(buf)
-       # OPcode = opcode(buf)
-       srcport = src[1]
-       
-       if protocol(buf) == THEPROTO and opcode(buf) == DATAop and len(buf) >= DHEADERSIZE:
-           data = DATA(0, '').read(buf)		# this is ugly
+        if protocol(buf) != THEPROTO:
+            print(f"protocol(buf) ({protocol(buf)}) does not equal THEPROTO ({THEPROTO})", file=sys.stderr)
+            continue
+        if opcode(buf) != DATAop:
+            print(f"opcode(buf) ({opcode(buf)}) does not equal DATAop ({DATAop})", file=sys.stderr)
+            continue
+
+        data = DATA(0, '').read(buf)		# this is ugly
            
-       printinfo(buf, src)
+        printinfo(buf, src)
        
-       #print(data)
-       # print('blocknum: ', data.blocknum())
-       block = data.blocknum()
-       print('received block', block, file=sys.stderr)
+        #print(data)
+        # print('blocknum: ', data.blocknum())
+        block = data.blocknum()
+        print('received block', block, file=sys.stderr)
        
-       if expected_block == block:
+        if expected_block == block:
             sys.stdout.buffer.write(data.databuf)
-       ack = ACK(expected_block)		# pld: something will need to be fixed here for later blocks
-       s.sendto(ack.write(), (dest, newport))
-       if expected_block == block:
+        ack = ACK(expected_block)
+        s.sendto(ack.write(), (dest, newport))
+        if expected_block == block:
                    expected_block += 1
-       if len(data.databuf) < MAXDATASIZE: return
+        if len(data.databuf) < MAXDATASIZE: return
 
 #################################################################       
 # prints packet type, length, protocol, source, etc
